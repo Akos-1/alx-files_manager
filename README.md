@@ -1,1 +1,1 @@
-my ALX files manager
+Our ALX files manager for this collaborative project
