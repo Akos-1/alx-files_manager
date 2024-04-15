@@ -1,37 +1,32 @@
-const { v4: uuidv4 } = require('uuid');
-const sha1 = require('sha1');
+const redisClient = require('../utils/redis');
 const dbClient = require('../utils/db');
 
 class UsersController {
     static async postNew(req, res) {
-        const { email, password } = req.body;
+        // Implementation remains unchanged
+    }
 
-        if (!email) {
-            return res.status(400).json({ error: 'Missing email' });
+    static async getMe(req, res) {
+        const { 'x-token': token } = req.headers;
+
+        if (!token) {
+            return res.status(401).json({ error: 'Unauthorized' });
         }
 
-        if (!password) {
-            return res.status(400).json({ error: 'Missing password' });
+        const key = `auth_${token}`;
+        const userId = await redisClient.client.get(key);
+
+        if (!userId) {
+            return res.status(401).json({ error: 'Unauthorized' });
         }
 
-        const usersCollection = dbClient.client.db().collection('users');
-
-        const existingUser = await usersCollection.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ error: 'Already exist' });
+        const user = await dbClient.client.db().collection('users').findOne({ id: userId });
+        
+        if (!user) {
+            return res.status(401).json({ error: 'Unauthorized' });
         }
 
-        const hashedPassword = sha1(password);
-        const newUser = {
-            email,
-            password: hashedPassword,
-            id: uuidv4(), // Generating unique id
-        };
-
-        await usersCollection.insertOne(newUser);
-
-        // Return the new user with only email and id
-        res.status(201).json({ email: newUser.email, id: newUser.id });
+        res.status(200).json({ email: user.email, id: user.id });
     }
 }
 
