@@ -1,33 +1,31 @@
-const redisClient = require('../utils/redis');
+#!/usr/bin/node
+
 const dbClient = require('../utils/db');
 
 class UsersController {
-    static async postNew(req, res) {
-        // Implementation remains unchanged
+  static async postNew(req, res) {
+    const { email, password } = req.body;
+    if (!email) {
+      res.status(400).json({ error: 'Missing email' });
+      res.end();
+      return;
     }
-
-    static async getMe(req, res) {
-        const { 'x-token': token } = req.headers;
-
-        if (!token) {
-            return res.status(401).json({ error: 'Unauthorized' });
-        }
-
-        const key = `auth_${token}`;
-        const userId = await redisClient.client.get(key);
-
-        if (!userId) {
-            return res.status(401).json({ error: 'Unauthorized' });
-        }
-
-        const user = await dbClient.client.db().collection('users').findOne({ id: userId });
-        
-        if (!user) {
-            return res.status(401).json({ error: 'Unauthorized' });
-        }
-
-        res.status(200).json({ email: user.email, id: user.id });
+    if (!password) {
+      res.status(400).json({ error: 'Missing password' });
+      res.end();
+      return;
     }
+    const userExist = await dbClient.userExist(email);
+    if (userExist) {
+      res.status(400).json({ error: 'Already exist' });
+      res.end();
+      return;
+    }
+    const user = await dbClient.createUser(email, password);
+    const id = `${user.insertedId}`;
+    res.status(201).json({ id, email });
+    res.end();
+  }
 }
 
 module.exports = UsersController;
