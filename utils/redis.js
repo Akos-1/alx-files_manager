@@ -1,3 +1,5 @@
+#!/usr/bin/node
+
 const redis = require('redis');
 
 class RedisClient {
