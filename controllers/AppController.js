@@ -3,7 +3,6 @@
 const dbClient = require('../utils/db');
 const redisClient = require('../utils/redis');
 
-
 class AppController {
     static async getStatus(req, res) {
         const redisStatus = redisClient.isAlive();
